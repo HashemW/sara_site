@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  /* Arabian Night Color Palette */
+  --color-primary: #312e81;      /* Deep Indigo */
+  --color-secondary: #92400e;    /* Desert Sand */
+  --color-accent: #06b6d4;       /* Turquoise */
+  --color-background: #0c0a23;   /* Rich Dark Blue */
+  --color-text: #fef3c7;         /* Soft Cream */
+  --color-text-muted: #d4d4d8;   /* Muted cream for secondary text */
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+/* Fade in animation for the detailed content */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+label[for] {
+  cursor: pointer;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
