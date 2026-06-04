@@ -1,17 +1,33 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // <-- Imported i18n hook
 
 export default function Navigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Updated to match the new product-focused architecture
+  // Initialize translations
+  const { t, i18n } = useTranslation();
+
+  // The magic layout flipper
+  useEffect(() => {
+    document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'ar' : 'en';
+    i18n.changeLanguage(newLang);
+    setIsMobileMenuOpen(false); // Close mobile menu when switching languages
+  };
+  
+  // Updated to use the translation dictionary
   const navItems = [
-    { label: 'Home', path: '/', type: 'route' },
-    { label: 'How it Works', path: '/', sectionId: 'features', type: 'scroll' },
-    { label: 'The Science', path: '/science', type: 'route' },
-    { label: 'About Us', path: '/about', type: 'route' }
+    { label: t('nav_home'), path: '/', type: 'route' },
+    { label: t('nav_how_it_works'), path: '/', sectionId: 'features', type: 'scroll' },
+    { label: t('nav_science'), path: '/science', type: 'route' },
+    { label: t('nav_about'), path: '/about', type: 'route' }
   ];
   
   // Handle navigation with scroll
@@ -42,7 +58,7 @@ export default function Navigation() {
         <Link to="/" className="text-2xl font-extrabold tracking-tight hover:opacity-80 transition-opacity flex items-center gap-2">
           <span className="text-zinc-50">SARA</span>
           <span className="text-orange-500 text-xs font-bold uppercase tracking-widest hidden sm:inline border border-orange-500/30 bg-orange-500/10 px-2 py-0.5 rounded">
-            AI Assistant
+            {t('nav_ai_assistant')}
           </span>
         </Link>
         
@@ -62,16 +78,29 @@ export default function Navigation() {
             ))}
           </ul>
           
-          {/* Primary CTA Button - Always visible on desktop */}
-          <button 
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-              navigate('/dashboard');
-            }}
-            className="bg-orange-500 hover:bg-orange-400 text-zinc-950 text-sm font-bold px-5 py-2 rounded-lg transition-colors"
-          >
-            Analyze Ride
-          </button>
+          <div className="flex items-center gap-4 border-l border-zinc-800 pl-8">
+            {/* Desktop Language Toggle */}
+            <button 
+              onClick={toggleLanguage}
+              className="flex items-center gap-2 text-zinc-400 hover:text-orange-500 transition-colors text-sm font-bold"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              {i18n.language === 'en' ? 'العربية' : 'English'}
+            </button>
+
+            {/* Primary CTA Button */}
+            <button 
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                navigate('/dashboard');
+              }}
+              className="bg-orange-500 hover:bg-orange-400 text-zinc-950 text-sm font-bold px-5 py-2 rounded-lg transition-colors"
+            >
+              {t('nav_analyze')}
+            </button>
+          </div>
         </div>
         
         {/* Mobile Hamburger Button */}
@@ -104,6 +133,20 @@ export default function Navigation() {
                 </button>
               </li>
             ))}
+            
+            {/* Mobile Language Toggle */}
+            <li className="pt-2">
+              <button 
+                onClick={toggleLanguage}
+                className="flex items-center gap-2 text-zinc-400 hover:text-orange-500 transition-colors font-medium w-full text-left"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                </svg>
+                {i18n.language === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
+              </button>
+            </li>
+
             {/* Mobile CTA */}
             <li className="pt-4 border-t border-zinc-800">
               <button 
@@ -113,7 +156,7 @@ export default function Navigation() {
                 }}
                 className="w-full bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold px-5 py-3 rounded-lg transition-colors"
               >
-                Analyze Ride
+                {t('nav_analyze')}
               </button>
             </li>
           </ul>

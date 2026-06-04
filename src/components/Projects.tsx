@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next"; // <-- Imported i18n hook
+
 interface Project {
   title: string;
   description: string;
@@ -9,38 +11,40 @@ interface Project {
 }
 
 export default function Projects() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { t } = useTranslation(); // <-- Initialize translation
+
   const updates: Project[] = [
     {
-      title: "Equestrian Pose Detection Model",
-      description: "Created an equestrian pose detection model trained on tens of thousands of auto-annotated images.",
-      tags: ["YOLO", "Pose Detection", "Data Science"],
+      title: t('proj_1_title'),
+      description: t('proj_1_desc'),
+      tags: ["YOLO", t('proj_1_tag2'), t('proj_1_tag3')],
       gradient: "from-cyan-600 to-blue-700",
-      date: "May-Sep 2025",
+      date: t('proj_1_date'),
       path: "/posedetection"
     },
     {
-      title: "Gait Analysis Dashboard",
-      description: "An innovative way of analyzing a horse's gait from a video.",
-      tags: ["Transformers", "Neural Networks", "Edge Computing"],
+      title: t('proj_2_title'),
+      description: t('proj_2_desc'),
+      tags: ["Transformers", t('proj_2_tag2'), t('proj_2_tag3')],
       gradient: "from-indigo-600 to-purple-700",
-      date: "Jun 2025",
+      date: t('proj_2_date'),
       path: "/gaitanalysis"
     },
     {
-      title: "Cadence v0.2",
-      description: "Our AI equestrian coach model. Try it out today!",
-      tags: ["Biomechanics", "Pose Analysis"],
+      title: t('proj_3_title'),
+      description: t('proj_3_desc'),
+      tags: [t('proj_3_tag1'), t('proj_3_tag2')],
       gradient: "from-amber-600 to-orange-700",
-      date: "Aug 2025",
+      date: t('proj_3_date'),
       path: '/cadence'
     },
     {
-      title: "The All-Angled Breakthrough",
-      description: "How we finally cracked a seven month problem.",
-      tags: ["Neural Networks", "Linear Algebra"],
+      title: t('proj_4_title'),
+      description: t('proj_4_desc'),
+      tags: [t('proj_2_tag2'), t('proj_4_tag2')], // Reused Neural Networks tag
       gradient: "from-amber-600 to-orange-700",
-      date: "Dec 2025",
+      date: t('proj_4_date'),
       path: '/allangles'
     }
   ];
@@ -55,10 +59,10 @@ export default function Projects() {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent p-4">
-            Research Progress
+            {t('proj_header')}
           </h2>
           <p className="text-amber-100/70 text-lg max-w-2xl mx-auto">
-            Tracking our journey in developing an intelligent equestrian coaching system that combines AI, computer vision, and biomechanics.
+            {t('proj_subtitle')}
           </p>
         </div>
         
@@ -71,7 +75,8 @@ export default function Projects() {
             <div 
               onClick={() => handleNavClick(update)}
               key={update.title}
-              className="bg-indigo-950/40 backdrop-blur-sm rounded-xl border border-indigo-800/30 overflow-hidden hover:border-cyan-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10 hover:-translate-y-1"
+              // Added cursor-pointer so the hover state feels like a button
+              className="bg-indigo-950/40 backdrop-blur-sm rounded-xl border border-indigo-800/30 overflow-hidden cursor-pointer hover:border-cyan-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-cyan-500/10 hover:-translate-y-1"
             >
               {/* Colorful header with date */}
               <div className={`h-2 bg-gradient-to-r ${update.gradient}`} />

@@ -1,11 +1,12 @@
 import './styles/globals.css';
+import './i18n'; // <-- IMPORT YOUR i18n CONFIG HERE
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Pages
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
-import Science from './pages/Science'; // <-- Your new Tech Hub!
+import Science from './pages/Science'; 
 import About from './pages/About'
 // Components
 import ScrollToTop from './components/scrollToTop';

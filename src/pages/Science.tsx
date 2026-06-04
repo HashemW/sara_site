@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next'; // <-- ADDED HOOK
 import Navigation from '../components/Navigation';
 import { useNavigate } from 'react-router-dom';
 
 export default function Science() {
   const navigate = useNavigate();
+  const { t } = useTranslation(); // <-- INITIALIZE TRANSLATION
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans selection:bg-orange-500/30">
@@ -17,18 +19,18 @@ export default function Science() {
             <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
             </svg>
-            Proprietary Architecture
+            {t('science_badge')}
           </div>
 
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 text-zinc-50 leading-tight">
-            The Engine Behind <br />
+            {t('science_title_1')} <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-400">
-              Your Perfect Seat
+              {t('science_title_2')}
             </span>
           </h1>
 
           <p className="text-xl text-zinc-400 mb-8 max-w-2xl mx-auto leading-relaxed">
-            We combined state-of-the-art computer vision with biomechanics to build the world's most accurate equestrian pose model. No sensors. No suits. Just your camera.
+            {t('science_hero_desc')}
           </p>
         </div>
       </header>
@@ -40,7 +42,6 @@ export default function Science() {
         <section className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="order-2 lg:order-1">
             <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl">
-              {/* Replace with your man31.jpg or horse.jpg */}
               <img 
                 src="horse.jpg" 
                 alt="AI Pose Detection mapping keypoints on a rider"
@@ -53,24 +54,24 @@ export default function Science() {
           <div className="order-1 lg:order-2">
             <h2 className="text-3xl font-bold mb-4 flex items-center gap-4">
               <span className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center text-sm">01</span>
-              Kinematic Pose Mapping
+              {t('science_pose_title')}
             </h2>
             <p className="text-zinc-400 text-lg leading-relaxed mb-8">
-              Generic AI models don't understand horseback riding. We built SARA Core v2.0 by training our neural networks on a massive, proprietary dataset of equestrian athletes. The system instantly maps your skeletal structure—locking onto your shoulder, hip, and heel—to calculate exact alignment deviations in real-time.
+              {t('science_pose_desc')}
             </p>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
                 <div className="text-3xl font-black text-zinc-50 mb-1">160k+</div>
-                <div className="text-sm text-zinc-500 font-medium uppercase tracking-wide">Annotated Frames</div>
+                <div className="text-sm text-zinc-500 font-medium uppercase tracking-wide">{t('science_stat_frames')}</div>
               </div>
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
                 <div className="text-3xl font-black text-zinc-50 mb-1">95<span className="text-orange-500">%</span></div>
-                <div className="text-sm text-zinc-500 font-medium uppercase tracking-wide">Detection Precision</div>
+                <div className="text-sm text-zinc-500 font-medium uppercase tracking-wide">{t('science_stat_precision')}</div>
               </div>
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 col-span-2 flex justify-between items-center">
-                <span className="text-sm text-zinc-500 font-medium uppercase tracking-wide">Processing Speed</span>
-                <span className="text-xl font-bold text-orange-400">14 FPS / 75ms Latency</span>
+                <span className="text-sm text-zinc-500 font-medium uppercase tracking-wide">{t('science_stat_speed')}</span>
+                <span className="text-xl font-bold text-orange-400">{t('science_stat_latency')}</span>
               </div>
             </div>
           </div>
@@ -81,25 +82,25 @@ export default function Science() {
           <div>
             <h2 className="text-3xl font-bold mb-4 flex items-center gap-4">
               <span className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center text-sm">02</span>
-              Dynamic Gait Recognition
+              {t('science_gait_title')}
             </h2>
             <p className="text-zinc-400 text-lg leading-relaxed mb-8">
-              Posture means nothing without context. A perfect seat at the walk is completely different from a perfect seat at the canter. SARA uses an advanced Transformer model that tracks the micro-movements of your horse's joints across a sliding window of frames, automatically determining the current gait to adjust your scoring metrics dynamically.
+              {t('science_gait_desc')}
             </p>
             
             <div className="space-y-4">
               <div className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl">
                 <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400">🌊</div>
                 <div>
-                  <div className="font-bold text-zinc-200">Fluid Mechanics</div>
-                  <div className="text-sm text-zinc-500">Analyzes bounce, velocity, and trajectory.</div>
+                  <div className="font-bold text-zinc-200">{t('science_fluid_title')}</div>
+                  <div className="text-sm text-zinc-500">{t('science_fluid_desc')}</div>
                 </div>
               </div>
               <div className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl">
                 <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400">🧠</div>
                 <div>
-                  <div className="font-bold text-zinc-200">Transformer Architecture</div>
-                  <div className="text-sm text-zinc-500">Trained on 75,000+ movement sequences.</div>
+                  <div className="font-bold text-zinc-200">{t('science_trans_title')}</div>
+                  <div className="text-sm text-zinc-500">{t('science_trans_desc')}</div>
                 </div>
               </div>
             </div>
@@ -107,7 +108,6 @@ export default function Science() {
 
           <div>
             <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl p-2">
-              {/* Replace with your gaitAnalysis.gif */}
               <div className="bg-zinc-950 rounded-xl overflow-hidden">
                 <img 
                   src="gaitAnalysis.gif" 
@@ -124,9 +124,9 @@ export default function Science() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-orange-500/5 rounded-full blur-[100px] pointer-events-none" />
           
           <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-zinc-50 mb-4">Research-Backed Accuracy</h3>
+            <h3 className="text-2xl font-bold text-zinc-50 mb-4">{t('science_research_title')}</h3>
             <p className="text-zinc-400 max-w-2xl mx-auto mb-8">
-              The foundational architecture behind SARA's auto-annotation pipeline and pose extraction is currently being prepared for submission to the International Conference on Pattern Recognition (ICPR).
+              {t('science_research_desc')}
             </p>
             <div className="flex justify-center gap-3 flex-wrap">
               <span className="px-4 py-2 bg-zinc-950 border border-zinc-800 text-zinc-500 rounded-lg text-sm font-mono">PyTorch</span>
@@ -139,12 +139,12 @@ export default function Science() {
 
         {/* Bottom CTA */}
         <section className="text-center pb-12">
-          <h2 className="text-3xl font-bold text-zinc-50 mb-6">Stop guessing. Start analyzing.</h2>
+          <h2 className="text-3xl font-bold text-zinc-50 mb-6">{t('science_cta_title')}</h2>
           <button
             onClick={() => navigate('/dashboard')}
             className="px-8 py-4 bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold rounded-lg transition-colors text-lg shadow-lg shadow-orange-500/20"
           >
-            Try SARA For Free
+            {t('science_cta_btn')}
           </button>
         </section>
 

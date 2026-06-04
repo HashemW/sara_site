@@ -1,7 +1,7 @@
 import { useState, useRef, DragEvent, ChangeEvent, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next'; // <-- ADDED HOOK
 import Navigation from '../components/Navigation';
 
-// Update this interface in Dashboard.tsx
 interface TelemetryData {
   status: string;
   video_metadata: { fps: number };
@@ -12,27 +12,25 @@ interface TelemetryData {
     scores: { back: number | null; leg: number | null; arm: number | null };
     is_side_view: boolean;
     guidance?: { back: string | null; leg: string | null; arm: string | null };
-    // --- NEW LINE ---
     ideal_keypoints?: { S_ideal: number[]; A_ideal: number[]; K_ideal: number[]; E_ideal: number[]; W_ideal: number[]; } | null;
     gait?: string | null;
   }>;
 }
 
-
 const API_URL = "https://hashemwdp--sara-ai-backend-v2-fastapi-app.modal.run/analyze";
 
 export default function Dashboard() {
-  // Add this to your states at the top
+  const { t, i18n } = useTranslation(); // <-- INITIALIZE TRANSLATION
+  const isArabic = i18n.language === 'ar';
+
   const [currentLiveData, setCurrentLiveData] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'processing' | 'ready' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState("");
   
-  // 2. UPDATE YOUR STATE TO USE THE INTERFACE
   const [telemetryData, setTelemetryData] = useState<TelemetryData | null>(null);
   
-  // Exporting states
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   
@@ -45,7 +43,6 @@ export default function Dashboard() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // --- DRAG AND DROP HANDLERS ---
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e: DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -66,7 +63,6 @@ export default function Dashboard() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // --- API CONNECTION ---
   const handleFileSelection = async (file: File) => {
     if (!file.type.startsWith('video/')) { alert("Please upload a valid video file (.mp4, .mov)"); return; }
     setVideoFile(file);
@@ -90,10 +86,12 @@ export default function Dashboard() {
     }
   };
 
-  // --- REAL-TIME DRAWING ENGINE ---
   const drawSkeletalOverlay = (ctx: CanvasRenderingContext2D, video: HTMLVideoElement, fps: number) => {
     const currentFrameIdx = Math.floor(video.currentTime * fps);
     const frameData = telemetryData?.frames[currentFrameIdx];
+
+    // --- NEW: ENSURE CANVAS TEXT DIRECTION SUPPORTS ARABIC ---
+    ctx.direction = isArabic ? 'rtl' : 'ltr';
 
     if (frameData && frameData.keypoints) {
       const kpts = frameData.keypoints;
@@ -109,16 +107,13 @@ export default function Dashboard() {
       const K_IDX = isLeft ? 11 : 12; 
       const A_IDX = isLeft ? 13 : 14; 
 
-      // --- NEW: DYNAMIC SCALING ---
-      // Creates a multiplier based on the video's longest edge (using 1000px as the baseline)
       const scale = Math.max(video.videoWidth, video.videoHeight) / 1000;
-      const s = (val: number) => val * scale; // Helper to quickly scale pixel values
+      const s = (val: number) => val * scale; 
 
       const backColor = (frameData.is_side_view && frameData.scores?.back != null) ? "rgba(16, 185, 129, 0.9)" : "rgba(161, 161, 170, 0.4)";
       const armColor = (frameData.is_side_view && frameData.scores?.arm != null) ? "rgba(14, 165, 233, 0.9)" : "rgba(161, 161, 170, 0.4)";
       const legColor = (frameData.is_side_view && frameData.scores?.leg != null) ? "rgba(245, 158, 11, 0.9)" : "rgba(161, 161, 170, 0.4)";
 
-      // 1. SEGMENT-SPECIFIC MULTI-COLOR SKELETON
       const drawBone = (idx1: number, idx2: number, color: string) => {
         const p1 = kpts[idx1];
         const p2 = kpts[idx2];
@@ -127,10 +122,10 @@ export default function Dashboard() {
           ctx.moveTo(p1[0], p1[1]);
           ctx.lineTo(p2[0], p2[1]);
           ctx.strokeStyle = color;
-          ctx.lineWidth = s(3); // Scaled!
+          ctx.lineWidth = s(3); 
           ctx.lineCap = "round";
           ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-          ctx.shadowBlur = s(4); // Scaled!
+          ctx.shadowBlur = s(4); 
           ctx.stroke();
         }
       };
@@ -141,24 +136,23 @@ export default function Dashboard() {
       drawBone(H_IDX, K_IDX, legColor); 
       drawBone(K_IDX, A_IDX, legColor);
 
-      // 2. DYNAMIC CORRECTION VECTORS
       if (frameData.ideal_keypoints) {
         ctx.lineCap = "round";
         
         const drawVector = (actualPt: number[], idealPt: number[], color: string) => {
            ctx.setLineDash([]); 
-           ctx.lineWidth = s(2.5); // Scaled!
+           ctx.lineWidth = s(2.5); 
            ctx.beginPath();
            ctx.moveTo(actualPt[0], actualPt[1]);
            ctx.lineTo(idealPt[0], idealPt[1]);
            ctx.strokeStyle = color;
            ctx.shadowColor = color;
-           ctx.shadowBlur = s(8); // Scaled!
+           ctx.shadowBlur = s(8); 
            ctx.stroke();
            
-           ctx.lineWidth = s(2); // Scaled!
+           ctx.lineWidth = s(2); 
            ctx.beginPath();
-           ctx.arc(idealPt[0], idealPt[1], s(5), 0, Math.PI * 2); // Scaled!
+           ctx.arc(idealPt[0], idealPt[1], s(5), 0, Math.PI * 2); 
            ctx.fillStyle = "rgba(24, 24, 27, 0.8)"; 
            ctx.fill();
            ctx.stroke(); 
@@ -179,9 +173,7 @@ export default function Dashboard() {
         ctx.setLineDash([]); 
       }
 
-      // 3. DRAW THE SLEEK TEXT TAGS
       if (frameData.guidance) {
-        // Scale the font size, but don't let it drop below 10px on very tiny videos
         const fontSize = Math.max(s(11), 10); 
         ctx.font = `600 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
         ctx.textAlign = "center";
@@ -190,7 +182,6 @@ export default function Dashboard() {
         const drawSleekTag = (text: string | null | undefined, x: number, y: number, color: string) => {
           if (!text) return;
 
-          // Scale all box dimensions
           const paddingX = s(10);
           const textWidth = ctx.measureText(text).width;
           const boxWidth = textWidth + (paddingX * 2) + s(10); 
@@ -210,14 +201,14 @@ export default function Dashboard() {
 
           ctx.fillStyle = color;
           ctx.beginPath();
-          ctx.arc(x - boxWidth / 2 + s(10), y, s(3), 0, Math.PI * 2); // Scaled!
+          ctx.arc(x - boxWidth / 2 + s(10), y, s(3), 0, Math.PI * 2); 
           ctx.fill();
 
           ctx.fillStyle = "#ffffff";
-          ctx.fillText(text.toUpperCase(), x + s(6), y + s(0.5)); // Scaled offsets!
+          // We removed toUpperCase() here because it breaks Arabic rendering and is unnecessary. 
+          ctx.fillText(text, x + s(6), y + s(0.5)); 
         };
 
-        // Scale the anchor offsets so they float perfectly regardless of resolution!
         if (kpts[S_IDX]) drawSleekTag(frameData.guidance.back, kpts[S_IDX][0], kpts[S_IDX][1] - s(40), backColor);
         if (kpts[E_IDX]) drawSleekTag(frameData.guidance.arm, kpts[E_IDX][0] + (isLeft ? -s(45) : s(45)), kpts[E_IDX][1], armColor);
         if (kpts[A_IDX]) drawSleekTag(frameData.guidance.leg, kpts[A_IDX][0], kpts[A_IDX][1] + s(50), legColor);
@@ -227,7 +218,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     let animationFrameId: number;
-    let lastDrawnFrameIdx = -1; // Tracks the last frame we actually drew
+    let lastDrawnFrameIdx = -1; 
 
     const renderLoop = () => {
       const video = videoRef.current;
@@ -241,7 +232,6 @@ export default function Dashboard() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Ensure canvas size matches video size
       if (canvas.width !== video.videoWidth) {
          canvas.width = video.videoWidth;
          canvas.height = video.videoHeight;
@@ -258,7 +248,6 @@ export default function Dashboard() {
           lastDrawnFrameIdx = currentFrameIdx;
         }
       } else if (isExporting) {
-        // THE FIX: Instantly wipe the frozen skeleton off the screen during export
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
       
@@ -267,10 +256,8 @@ export default function Dashboard() {
 
     if (status === 'ready') renderLoop();
     return () => cancelAnimationFrame(animationFrameId);
-  }, [status, telemetryData, isExporting]);
+  }, [status, telemetryData, isExporting, isArabic]);
 
-  // --- VIDEO EXPORT ENGINE ---
-  // --- VIDEO EXPORT ENGINE ---
   const exportVideo = () => {
     const video = videoRef.current;
     if (!video || !telemetryData) return;
@@ -278,7 +265,6 @@ export default function Dashboard() {
     setIsExporting(true);
     setExportProgress(0);
 
-    // 1. Setup an offscreen canvas
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = video.videoWidth;
     exportCanvas.height = video.videoHeight;
@@ -288,7 +274,6 @@ export default function Dashboard() {
       return;
     }
 
-    // Fallback for Safari which prefers mp4 over webm
     const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') 
       ? 'video/webm;codecs=vp9' 
       : MediaRecorder.isTypeSupported('video/webm') 
@@ -304,7 +289,6 @@ export default function Dashboard() {
     };
 
     mediaRecorder.onstop = () => {
-      // 4. Combine and download
       const blob = new Blob(chunks, { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -316,7 +300,6 @@ export default function Dashboard() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      // Reset UI and Video
       setIsExporting(false);
       video.muted = false;
       video.controls = true;
@@ -324,7 +307,7 @@ export default function Dashboard() {
     };
 
     const fps = telemetryData.video_metadata?.fps || 30;
-    let lastProgress = -1; // The throttle tracker
+    let lastProgress = -1; 
     let isRecording = true;
 
     const recordFrame = () => {
@@ -333,43 +316,41 @@ export default function Dashboard() {
       const currentFrameIdx = Math.floor(video.currentTime * fps);
       const frameData = telemetryData.frames[currentFrameIdx];
 
-      // Draw video and AI lines
       ctx.drawImage(video, 0, 0, exportCanvas.width, exportCanvas.height);
       drawSkeletalOverlay(ctx, video, fps);
       
-      // --- NEW: BAKE THE STATUS BADGES INTO THE EXPORT ---
-      // --- BAKE THE STATUS BADGES INTO THE EXPORT ---
       if (frameData) {
+        // --- NEW: SET EXPORT CANVAS RTL SUPPORT ---
+        ctx.direction = isArabic ? 'rtl' : 'ltr';
+        
+        // Removed toUpperCase() logic since it doesn't apply to Arabic characters
         ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
         ctx.textBaseline = "middle";
         const badgeY = 40;
         const badgeX = exportCanvas.width / 2;
 
         if (!frameData.is_side_view) {
-          const text = "AWAITING SIDE PROFILE";
+          const text = t('awaiting_side'); // TRANSLATED EXPORT TEXT
           ctx.textAlign = "left"; 
           const textWidth = ctx.measureText(text).width;
-          const totalWidth = textWidth + 24; // text + dot + spacing
+          const totalWidth = textWidth + 24; 
           const startX = badgeX - totalWidth / 2;
 
-          // Background pill
           ctx.fillStyle = "rgba(24, 24, 27, 0.85)";
           ctx.beginPath();
           ctx.roundRect(startX - 15, badgeY - 16, totalWidth + 30, 32, 16);
           ctx.fill();
 
-          // Dot
           ctx.fillStyle = "#eab308";
           ctx.beginPath();
           ctx.arc(startX, badgeY, 4, 0, Math.PI * 2);
           ctx.fill();
 
-          // Text
           ctx.fillStyle = "#e4e4e7";
           ctx.fillText(text, startX + 12, badgeY + 1);
 
         } else {
-          const text = "TRACKING ACTIVE";
+          const text = t('tracking_active'); // TRANSLATED EXPORT TEXT
           ctx.textAlign = "left";
           const textWidth = ctx.measureText(text).width;
           const totalWidth = textWidth + 24;
@@ -385,18 +366,15 @@ export default function Dashboard() {
           ctx.arc(startX, badgeY, 4, 0, Math.PI * 2);
           ctx.fill();
 
-          // ... (After the code that draws TRACKING ACTIVE text) ...
           ctx.fillStyle = "#4ade80";
           ctx.fillText(text, startX + 12, badgeY + 1);
           
-          // --- DRAW GAIT BADGE ON EXPORT ---
           if (frameData.gait) {
              const gaitText = frameData.gait;
              ctx.textAlign = "center";
              const gaitWidth = ctx.measureText(gaitText).width + 30;
-             const gaitY = badgeY + 36; // Place it below the tracking badge
+             const gaitY = badgeY + 36; 
              
-             // Amber Pill
              ctx.fillStyle = "rgba(24, 24, 27, 0.9)";
              ctx.beginPath();
              ctx.roundRect(badgeX - gaitWidth / 2, gaitY - 14, gaitWidth, 28, 14);
@@ -404,12 +382,10 @@ export default function Dashboard() {
              ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
              ctx.stroke();
 
-             // Amber Text
              ctx.fillStyle = "#f59e0b";
              ctx.fillText(gaitText, badgeX, gaitY + 1);
           }
         }
-        
       }
 
       const currentProgress = Math.floor((video.currentTime / video.duration) * 100);
@@ -429,19 +405,16 @@ export default function Dashboard() {
       mediaRecorder.stop();
     };
 
-    // Attach native event listener for the end of the video
     video.addEventListener('ended', handleVideoEnd);
 
-    // Prepare video for silent, rapid playback
     video.currentTime = 0;
     video.muted = true;
     video.controls = false; 
 
-    // 3. Use a slight timeout to ensure the video resets to 0:00 before recording starts
     setTimeout(() => {
       mediaRecorder.start();
       video.play().then(() => {
-        recordFrame(); // Kick off the drawing loop only AFTER the video confirms it is playing
+        recordFrame(); 
       }).catch(err => {
         console.error("Playback prevented by browser:", err);
         setIsExporting(false);
@@ -456,10 +429,10 @@ export default function Dashboard() {
       <main className="pt-32 pb-16 px-6 max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
-            Upload Your Ride
+            {t('upload_title')}
           </h1>
           <p className="text-xl text-zinc-400">
-            Get your frame-by-frame posture analysis. <span className="text-orange-500 font-bold">100% Free.</span>
+            {t('upload_subtitle')} <span className="text-orange-500 font-bold">{t('upload_free')}</span>
           </p>
         </div>
 
@@ -476,8 +449,8 @@ export default function Dashboard() {
             <div className="bg-zinc-800 p-4 rounded-full mb-4 shadow-lg">
               <svg className={`w-8 h-8 ${isDragging ? 'text-orange-500' : 'text-zinc-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
             </div>
-            <p className="text-xl font-bold text-zinc-200 mb-2">{isDragging ? 'Drop video here' : 'Click or drag video to upload'}</p>
-            <p className="text-sm text-zinc-500 font-mono">MP4 or MOV • Max 15 seconds recommended</p>
+            <p className="text-xl font-bold text-zinc-200 mb-2">{isDragging ? t('drop_video') : t('click_drag')}</p>
+            <p className="text-sm text-zinc-500 font-mono">{t('video_reqs')}</p>
           </div>
         )}
 
@@ -488,8 +461,8 @@ export default function Dashboard() {
               <div className="absolute inset-0 border-4 border-zinc-800 rounded-full"></div>
               <div className="absolute inset-0 border-4 border-orange-500 rounded-full border-t-transparent animate-spin"></div>
             </div>
-            <h3 className="text-2xl font-bold text-zinc-200 mb-2">Running SARA AI Engine...</h3>
-            <p className="text-zinc-500 animate-pulse">Initializing GPU and extracting keypoints.</p>
+            <h3 className="text-2xl font-bold text-zinc-200 mb-2">{t('processing_title')}</h3>
+            <p className="text-zinc-500 animate-pulse">{t('processing_sub')}</p>
           </div>
         )}
 
@@ -499,13 +472,12 @@ export default function Dashboard() {
             <div className="bg-red-900/50 p-4 rounded-full mb-4 text-red-500">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </div>
-            <h3 className="text-2xl font-bold text-red-400 mb-2">Analysis Failed</h3>
+            <h3 className="text-2xl font-bold text-red-400 mb-2">{t('error_title')}</h3>
             <p className="text-red-300/70 mb-6 max-w-md text-center">{errorMessage}</p>
-            <button onClick={resetDashboard} className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-semibold transition-colors">Try Again</button>
+            <button onClick={resetDashboard} className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-semibold transition-colors">{t('try_again')}</button>
           </div>
         )}
 
-        
         {/* READY STATE - THE TELEMETRY PLAYER */}
         {status === 'ready' && telemetryData && (
           <div className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden shadow-2xl transition-all">
@@ -526,28 +498,30 @@ export default function Dashboard() {
                   disabled={isExporting}
                   className={`text-sm font-bold px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${isExporting ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-400 text-zinc-950'}`}
                 >
-                  {isExporting ? `Rendering... ${exportProgress}%` : (
+                  {isExporting ? `${t('downloading')} ${exportProgress}%` : (
                     <>
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                      Download Analysis
+                      {t('download_btn')}
                     </>
                   )}
                 </button>
                 <button onClick={resetDashboard} disabled={isExporting} className="text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50">
-                  New Video
+                  {t('new_video')}
                 </button>
               </div>
             </div>
-            {/* isExporting Overlay - Heavy blur to hide the messy export process */}
-              {isExporting && (
-                <div className="absolute inset-0 z-50 bg-zinc-950/90 backdrop-blur-2xl flex flex-col items-center justify-center transition-all duration-300">
-                  <div className="w-12 h-12 border-4 border-zinc-800 border-t-orange-500 rounded-full animate-spin mb-4"></div>
-                  <p className="text-lg font-bold text-zinc-200 mb-2">Baking AI Overlay...</p>
-                  <div className="w-64 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-500 transition-all duration-200" style={{ width: `${exportProgress}%` }}></div>
-                  </div>
+            
+            {/* isExporting Overlay */}
+            {isExporting && (
+              <div className="absolute inset-0 z-50 bg-zinc-950/90 backdrop-blur-2xl flex flex-col items-center justify-center transition-all duration-300">
+                <div className="w-12 h-12 border-4 border-zinc-800 border-t-orange-500 rounded-full animate-spin mb-4"></div>
+                <p className="text-lg font-bold text-zinc-200 mb-2">{t('baking_overlay')}</p>
+                <div className="w-64 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-500 transition-all duration-200" style={{ width: `${exportProgress}%` }}></div>
                 </div>
-              )}
+              </div>
+            )}
+
             {/* THE CANVAS OVERLAY PLAYER */}
             <div className="relative w-full aspect-video bg-black overflow-hidden rounded-xl border border-zinc-800 shadow-2xl">
               
@@ -573,25 +547,24 @@ export default function Dashboard() {
                   {/* TOP BAR: Sensor Status & Gait Telemetry */}
                   <div className="flex flex-col items-center gap-3 transition-opacity duration-300">
                     
-                    {/* 1. Tracking Status */}
+                    {/* Tracking Status */}
                     <div className="flex justify-center">
                       {!currentLiveData.is_side_view ? (
                         <div className="backdrop-blur-md bg-zinc-900/80 border border-zinc-700 px-4 py-2 rounded-full flex items-center gap-3 shadow-xl">
                           <div className="w-2 h-2 bg-yellow-500 rounded-full animate-ping"></div>
-                          <span className="text-sm font-medium text-zinc-200 tracking-wide">Awaiting Side Profile</span>
+                          <span className="text-sm font-medium text-zinc-200 tracking-wide">{t('awaiting_side')}</span>
                         </div>
                       ) : (
                         <div className="backdrop-blur-md bg-zinc-950/40 border border-green-500/30 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs font-bold text-green-400 uppercase tracking-widest">Tracking Active</span>
+                          <span className="text-xs font-bold text-green-400 uppercase tracking-widest">{t('tracking_active')}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* 2. THE NEW GAIT BADGE */}
+                    {/* Gait Badge */}
                     {currentLiveData.is_side_view && currentLiveData.gait && (
                       <div className="backdrop-blur-md bg-zinc-950/80 border border-amber-500/30 px-4 py-2 rounded-full flex items-center gap-2 shadow-lg shadow-amber-500/5 transition-all">
-                        {/* Waveform Icon */}
                         <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
@@ -606,28 +579,25 @@ export default function Dashboard() {
                   {currentLiveData.is_side_view && currentLiveData.guidance && (
                     <div className="flex flex-col gap-3 max-w-xs self-end">
                       
-                      {/* Back Correction Card - ONLY renders if there is an error */}
                       {currentLiveData.guidance.back && (
                         <div className="backdrop-blur-xl bg-zinc-800/90 border border-zinc-600/50 p-3 rounded-xl shadow-2xl flex items-center gap-3 transition-all hover:bg-zinc-800">
                           <div className="bg-orange-500/20 text-orange-400 p-2 rounded-lg">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                           </div>
                           <div>
-                            <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">Posture Adjustment</h4>
-                            {/* 2. LIGHTER, CLEARER TEXT FONT, white ensures readability */}
+                            <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">{t('posture_adj')}</h4>
                             <p className="text-sm font-bold text-white tracking-wide">{currentLiveData.guidance.back}</p>
                           </div>
                         </div>
                       )}
 
-                      {/* Leg Correction Card */}
                       {currentLiveData.guidance.leg && (
                         <div className="backdrop-blur-xl bg-zinc-800/90 border border-zinc-600/50 p-3 rounded-xl shadow-2xl flex items-center gap-3 transition-all hover:bg-zinc-800">
                           <div className="bg-orange-500/20 text-orange-400 p-2 rounded-lg">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                           </div>
                           <div>
-                            <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">Leg Position</h4>
+                            <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-0.5">{t('leg_pos')}</h4>
                             <p className="text-sm font-bold text-white tracking-wide">{currentLiveData.guidance.leg}</p>
                           </div>
                         </div>
@@ -642,15 +612,15 @@ export default function Dashboard() {
             {/* Final Scores Footer */}
             <div className="bg-zinc-950 p-6 grid grid-cols-3 divide-x divide-zinc-800">
               <div className="text-center">
-                <div className="text-sm text-zinc-500 font-bold uppercase tracking-widest mb-1">Back Score</div>
+                <div className="text-sm text-zinc-500 font-bold uppercase tracking-widest mb-1">{t('back_score')}</div>
                 <div className="text-3xl font-black text-orange-500">{telemetryData.averages?.back_avg}%</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-zinc-500 font-bold uppercase tracking-widest mb-1">Leg Score</div>
+                <div className="text-sm text-zinc-500 font-bold uppercase tracking-widest mb-1">{t('leg_score')}</div>
                 <div className="text-3xl font-black text-green-400">{telemetryData.averages?.leg_avg}%</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-zinc-500 font-bold uppercase tracking-widest mb-1">Arm Score</div>
+                <div className="text-sm text-zinc-500 font-bold uppercase tracking-widest mb-1">{t('arm_score')}</div>
                 <div className="text-3xl font-black text-sky-400">{telemetryData.averages?.arm_avg}%</div>
               </div>
             </div>

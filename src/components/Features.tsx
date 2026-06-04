@@ -1,9 +1,13 @@
+import { useTranslation } from 'react-i18next'; // <-- Imported i18n hook
+
 export default function Features() {
+  const { t } = useTranslation(); // <-- Initialize translation
+
   const steps = [
     {
       number: "01",
-      title: "Film Your Students",
-      description: "Prop your phone on the arena fence or film from the center. SARA works with standard 2D video—no sensors, markers, or special suits required.",
+      title: t('feat_step1_title'),
+      description: t('feat_step1_desc'),
       icon: (
         <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -12,8 +16,8 @@ export default function Features() {
     },
     {
       number: "02",
-      title: "Process the Telemetry",
-      description: "Drop the video into our dashboard. SARA's neural networks instantly extract the skeletal map and analyze the horse's gait, providing raw visual data.",
+      title: t('feat_step2_title'),
+      description: t('feat_step2_desc'),
       icon: (
         <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -22,8 +26,8 @@ export default function Features() {
     },
     {
       number: "03",
-      title: "Interpret & Coach",
-      description: "AI is a powerful tool, but it can hallucinate. As the instructor, you use SARA's frame-by-frame scores to filter the noise, highlight key adjustments, and guide your students to their best ride.",
+      title: t('feat_step3_title'),
+      description: t('feat_step3_desc'),
       icon: (
         <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -38,11 +42,11 @@ export default function Features() {
         
         <div className="text-center mb-20">
           <h2 className="text-4xl md:text-5xl font-extrabold text-zinc-50 mb-6">
-            Your expert eye, <br className="md:hidden" />
-            <span className="text-zinc-500">augmented.</span>
+            {t('feat_header_1')} <br className="md:hidden" />
+            <span className="text-zinc-500">{t('feat_header_2')}</span>
           </h2>
           <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
-            SARA doesn't replace the coach. It provides objective, data-driven feedback to help you prove your point and accelerate learning.
+            {t('feat_subtitle')}
           </p>
         </div>
 

@@ -1,8 +1,11 @@
+import { useTranslation } from 'react-i18next'; // <-- ADDED HOOK
 import Navigation from '../components/Navigation';
 import Hero from '../components/Hero';
 import Features from '../components/Features'; // Rename 'Projects' to 'Features'
 
 export default function Home() {
+  const { t } = useTranslation(); // <-- INITIALIZE TRANSLATION
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans selection:bg-orange-500/30">
       <Navigation />
@@ -15,11 +18,11 @@ export default function Home() {
           <div className="mb-4">
             <span className="text-3xl font-extrabold tracking-tight text-zinc-50">SARA</span>
             <p className="text-sm text-zinc-400 mt-2 font-medium uppercase tracking-widest">
-              Skeletal Alignment & Riding Analytics
+              {t('footer_acronym')}
             </p>
           </div>
           <p className="text-zinc-500 text-sm">
-            © 2026 SARA • Precision Equestrian Analytics
+            {t('footer_copyright')}
           </p>
           <p className="text-zinc-600 text-xs mt-4">
             سارَ • "to walk"

@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [tailwindcss()],
+  plugins: [tailwindcss(), react()],
+  resolve: {
+    // THIS IS THE MAGIC LINE
+    dedupe: ['react', 'react-dom'] 
+  }
 });
