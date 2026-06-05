@@ -17,9 +17,6 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 text-center">
           <div className="mb-4">
             <span className="text-3xl font-extrabold tracking-tight text-zinc-50">SARA</span>
-            <p className="text-sm text-zinc-400 mt-2 font-medium uppercase tracking-widest">
-              {t('footer_acronym')}
-            </p>
           </div>
           <p className="text-zinc-500 text-sm">
             {t('footer_copyright')}

@@ -29,7 +29,7 @@ export default function Team() {
         "Connecting project to industry and academic networks",
         "Ensuring research rigor and publication standards"
       ],
-      imageUrl: "telipic.jpg",
+      imageUrl: "/telipic.jpg",
       email: "nayeem@cs.umd.edu",
       github: "https://github.com/nayeemmz",
       linkedin: "https://www.linkedin.com/in/mohammad-nayeem-teli-b1a697",  
@@ -47,7 +47,7 @@ export default function Team() {
         "UI/UX design and front-end development",
         "Documentation and technical writing"
       ],
-      imageUrl: "hashemHorse.jpg",
+      imageUrl: "/hashemHorse.jpg",
       email: "hwahed@terpmail.umd.edu",
       github: "https://github.com/HashemW",
       linkedin: "https://www.linkedin.com/in/hashem-wahed-b301aa253",
@@ -124,7 +124,7 @@ export default function Team() {
                 <div 
                   className="absolute inset-0"
                   style={{ 
-                    backgroundImage: `url(${"linkedInNew.jpg"})`,
+                    backgroundImage: `url(${"/linkedInNew.jpg"})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     filter: 'brightness(0.4)'

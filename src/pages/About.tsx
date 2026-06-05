@@ -9,7 +9,7 @@ export default function About() {
       name: "Hashem Wahed",
       role: t('role_hashem'),
       bio: t('bio_hashem'),
-      imageUrl: "hashemHorse.jpg",
+      imageUrl: "/hashemHorse.jpg",
       email: "hwahed@terpmail.umd.edu",
       linkedin: "https://www.linkedin.com/in/hashem-wahed-b301aa253",
       github: "https://github.com/HashemW"
@@ -18,7 +18,7 @@ export default function About() {
       name: "Dr. Mohammad Nayeem Teli",
       role: t('role_teli'),
       bio: t('bio_teli'),
-      imageUrl: "linkedInNew.jpg",
+      imageUrl: "/linkedInNew.jpg",
       email: "nayeem@cs.umd.edu",
       linkedin: "https://www.linkedin.com/in/mohammad-nayeem-teli-b1a697",
       website: "https://www.cs.umd.edu/~nayeem"
@@ -124,7 +124,7 @@ export default function About() {
               </div>
               <div>
                 <img 
-                  src="youngHashem.jpg" 
+                  src="/youngHashem.jpg" 
                   alt="Hashem Wahed"
                   className="w-full h-auto rounded-xl border border-zinc-800 shadow-2xl"
                 />

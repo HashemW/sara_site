@@ -10,6 +10,7 @@ export default function Navigation() {
   // Initialize translations
   const { t, i18n } = useTranslation();
 
+  const currentLang = i18n.language || 'ar';
   // The magic layout flipper
   useEffect(() => {
     document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
@@ -17,17 +18,19 @@ export default function Navigation() {
   }, [i18n.language]);
 
   const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'ar' : 'en';
-    i18n.changeLanguage(newLang);
-    setIsMobileMenuOpen(false); // Close mobile menu when switching languages
+    const newLang = currentLang === 'en' ? 'ar' : 'en';
+    // Strip the current language from the path, keep the rest of the route
+    const currentPath = location.pathname.replace(/^\/(en|ar)/, '');
+    setIsMobileMenuOpen(false);
+    navigate(`/${newLang}${currentPath}`);
   };
   
   // Updated to use the translation dictionary
   const navItems = [
-    { label: t('nav_home'), path: '/', type: 'route' },
-    { label: t('nav_how_it_works'), path: '/', sectionId: 'features', type: 'scroll' },
-    { label: t('nav_science'), path: '/science', type: 'route' },
-    { label: t('nav_about'), path: '/about', type: 'route' }
+    { label: t('nav_home'), path: `/${currentLang}`, type: 'route' },
+    { label: t('nav_how_it_works'), path: `/${currentLang}`, sectionId: 'features', type: 'scroll' },
+    { label: t('nav_science'), path: `/${currentLang}/science`, type: 'route' },
+    { label: t('nav_about'), path: `/${currentLang}/about`, type: 'route' }
   ];
   
   // Handle navigation with scroll
@@ -94,7 +97,7 @@ export default function Navigation() {
             <button 
               onClick={() => {
                 setIsMobileMenuOpen(false);
-                navigate('/dashboard');
+                navigate(`/${currentLang}/dashboard`); // <-- Updated URL
               }}
               className="bg-orange-500 hover:bg-orange-400 text-zinc-950 text-sm font-bold px-5 py-2 rounded-lg transition-colors"
             >
@@ -152,9 +155,9 @@ export default function Navigation() {
               <button 
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  navigate('/dashboard');
+                  navigate(`/${currentLang}/dashboard`); // <-- Updated URL
                 }}
-                className="w-full bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold px-5 py-3 rounded-lg transition-colors"
+                className="bg-orange-500 hover:bg-orange-400 text-zinc-950 text-sm font-bold px-5 py-2 rounded-lg transition-colors"
               >
                 {t('nav_analyze')}
               </button>

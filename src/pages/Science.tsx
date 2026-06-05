@@ -43,7 +43,7 @@ export default function Science() {
           <div className="order-2 lg:order-1">
             <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl">
               <img 
-                src="horse.jpg" 
+                src="/horse.jpg" 
                 alt="AI Pose Detection mapping keypoints on a rider"
                 className="w-full h-auto object-cover opacity-90"
               />
@@ -110,7 +110,7 @@ export default function Science() {
             <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl p-2">
               <div className="bg-zinc-950 rounded-xl overflow-hidden">
                 <img 
-                  src="gaitAnalysis.gif" 
+                  src="/gaitAnalysis.gif" 
                   alt="AI predicting horse gait"
                   className="w-full h-auto opacity-80 mix-blend-screen"
                 />
