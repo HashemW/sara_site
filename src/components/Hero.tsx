@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'; // <-- Imported i18n hook
 
 export default function Hero() {
   const navigate = useNavigate();
-  const { t } = useTranslation(); // <-- Initialize translation
+  const { t, i18n } = useTranslation();; // <-- Initialize translation
   
   return (
     <section className="relative min-h-screen flex items-center bg-zinc-950 pt-20 overflow-hidden">
