@@ -281,7 +281,13 @@ export default function Dashboard() {
         : 'video/mp4';
 
     const stream = exportCanvas.captureStream(30); 
-    const mediaRecorder = new MediaRecorder(stream, { mimeType });
+    
+    // FIX 1: Cap the bitrate to 5-8 Mbps to prevent the CPU/Memory from overloading on 4K files
+    const mediaRecorder = new MediaRecorder(stream, { 
+      mimeType,
+      videoBitsPerSecond: 5000000 
+    });
+    
     const chunks: BlobPart[] = [];
 
     mediaRecorder.ondataavailable = (e) => {
@@ -298,7 +304,11 @@ export default function Dashboard() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      
+      // FIX 2: Give the browser 2 seconds to actually start the download before wiping the memory
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 2000);
       
       setIsExporting(false);
       video.muted = false;
@@ -320,17 +330,15 @@ export default function Dashboard() {
       drawSkeletalOverlay(ctx, video, fps);
       
       if (frameData) {
-        // --- NEW: SET EXPORT CANVAS RTL SUPPORT ---
         ctx.direction = isArabic ? 'rtl' : 'ltr';
         
-        // Removed toUpperCase() logic since it doesn't apply to Arabic characters
         ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
         ctx.textBaseline = "middle";
         const badgeY = 40;
         const badgeX = exportCanvas.width / 2;
 
         if (!frameData.is_side_view) {
-          const text = t('awaiting_side'); // TRANSLATED EXPORT TEXT
+          const text = t('awaiting_side'); 
           ctx.textAlign = "left"; 
           const textWidth = ctx.measureText(text).width;
           const totalWidth = textWidth + 24; 
@@ -350,7 +358,7 @@ export default function Dashboard() {
           ctx.fillText(text, startX + 12, badgeY + 1);
 
         } else {
-          const text = t('tracking_active'); // TRANSLATED EXPORT TEXT
+          const text = t('tracking_active'); 
           ctx.textAlign = "left";
           const textWidth = ctx.measureText(text).width;
           const totalWidth = textWidth + 24;
@@ -412,7 +420,10 @@ export default function Dashboard() {
     video.controls = false; 
 
     setTimeout(() => {
-      mediaRecorder.start();
+      // FIX 3: THE MAGIC BULLET. Pass 500ms into the start function.
+      // This forces the browser to flush the buffer to your 'chunks' array twice a second.
+      mediaRecorder.start(500); 
+      
       video.play().then(() => {
         recordFrame(); 
       }).catch(err => {
