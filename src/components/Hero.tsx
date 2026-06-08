@@ -1,21 +1,22 @@
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next'; // <-- Imported i18n hook
+import { useTranslation } from 'react-i18next';
 
 export default function Hero() {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();; // <-- Initialize translation
+  const { t, i18n } = useTranslation();
+  
+  // Safe variable for routing
+  const safeLang = i18n.language === 'en' ? 'en' : 'ar';
   
   return (
     <section className="relative min-h-screen flex items-center bg-zinc-950 pt-20 overflow-hidden">
       
-      {/* Subtle background glow so it's not pure black */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-zinc-600/10 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           
-          {/* LEFT COLUMN: The Pitch */}
           <div className="text-left pt-12 lg:pt-0">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-xs font-bold tracking-widest uppercase mb-6">
               <span className="relative flex h-2 w-2">
@@ -33,16 +34,16 @@ export default function Hero() {
             </h1>
             
             <p className="text-lg sm:text-xl text-zinc-400 mb-10 max-w-lg leading-relaxed">
-              {t('hero_desc_2')}
+              {t('hero_desc')}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
+              {/* Correctly wired Main Page Button */}
               <button 
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate(`/${safeLang}/dashboard`)}
                 className="px-8 py-4 bg-orange-500 hover:bg-orange-400 text-zinc-950 font-bold rounded-lg transition-colors text-lg flex items-center justify-center gap-2 group"
               >
                 {t('hero_btn_analyze')}
-                {/* Notice the rtl:rotate-180 class added here! */}
                 <svg className="w-5 h-5 transform rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -57,7 +58,6 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: The Product Showcase */}
           <div className="relative mx-auto w-full max-w-sm">
             <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shadow-2xl shadow-orange-500/5">
               <div className="flex items-center px-4 py-3 border-b border-zinc-800 bg-zinc-950/50">
@@ -66,7 +66,6 @@ export default function Hero() {
                   <div className="w-3 h-3 rounded-full bg-zinc-700"></div>
                   <div className="w-3 h-3 rounded-full bg-zinc-700"></div>
                 </div>
-                {/* Filenames are usually kept in English in tech UI, so this is hardcoded, but you can translate if desired */}
                 <div className="mx-auto text-xs font-mono text-zinc-500">live_telemetry_feed.mp4</div>
               </div>
               <div className="aspect-[4/5] bg-zinc-800 relative">
