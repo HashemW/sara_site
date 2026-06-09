@@ -274,16 +274,38 @@ export default function Dashboard() {
       return;
     }
 
-    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') 
-      ? 'video/webm;codecs=vp9' 
-      : MediaRecorder.isTypeSupported('video/webm') 
-        ? 'video/webm' 
-        : 'video/mp4';
+    // 1. Prioritize MP4 for Safari/iOS, fallback to WebM for Chrome/Android
+    const mimeType = MediaRecorder.isTypeSupported('video/mp4')
+      ? 'video/mp4'
+      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9') 
+        ? 'video/webm;codecs=vp9' 
+        : 'video/webm';
 
-    const stream = exportCanvas.captureStream(30); 
-    
-    // FIX 1: Cap the bitrate to 5-8 Mbps to prevent the CPU/Memory from overloading on 4K files
-    const mediaRecorder = new MediaRecorder(stream, { 
+    // 2. Capture the visual frames from your canvas
+    const canvasStream = exportCanvas.captureStream(30); 
+    const tracks = [...canvasStream.getVideoTracks()];
+
+    // 3. Extract the audio track from the original video
+    try {
+      const anyVideo = video as any; // Bypass TS strict typing for browser-specific methods
+      const captureMethod = anyVideo.captureStream || anyVideo.mozCaptureStream;
+      
+      if (captureMethod) {
+        const videoStream = captureMethod.call(video);
+        const audioTracks = videoStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          tracks.push(audioTracks[0]); // Stitch the audio track to our canvas visuals
+        }
+      }
+    } catch (err) {
+      console.warn("Could not extract audio track:", err);
+    }
+
+    // 4. Create a unified stream with both Video and Audio
+    const combinedStream = new MediaStream(tracks);
+
+    // 5. Cap the bitrate and record the unified stream
+    const mediaRecorder = new MediaRecorder(combinedStream, { 
       mimeType,
       videoBitsPerSecond: 5000000 
     });
