@@ -446,7 +446,11 @@ export default function Dashboard() {
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `SARA_Analysis_${videoFile?.name || 'video'}.mp4`;
+      
+      // Strip out the original extension (e.g., .mp4, .mov) from the original file name
+      const cleanFileName = videoFile?.name ? videoFile.name.replace(/\.[^/.]+$/, "") : 'video';
+      a.download = `SARA_Analysis_${cleanFileName}.mp4`;
+      
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
