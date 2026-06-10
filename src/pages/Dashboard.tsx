@@ -1,6 +1,7 @@
 import { useState, useRef, DragEvent, ChangeEvent, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next'; // <-- ADDED HOOK
 import Navigation from '../components/Navigation';
+import * as Mp4Muxer from 'mp4-muxer';
 
 interface TelemetryData {
   status: string;
@@ -258,13 +259,14 @@ export default function Dashboard() {
     return () => cancelAnimationFrame(animationFrameId);
   }, [status, telemetryData, isExporting, isArabic]);
 
-  const exportVideo = () => {
+  const exportVideo = async () => {
     const video = videoRef.current;
     if (!video || !telemetryData) return;
 
     setIsExporting(true);
     setExportProgress(0);
 
+    // Create an off-screen canvas to draw the frames
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = video.videoWidth;
     exportCanvas.height = video.videoHeight;
@@ -274,168 +276,190 @@ export default function Dashboard() {
       return;
     }
 
-    // 1. Prioritize MP4 for Safari/iOS, fallback to WebM for Chrome/Android
-    const mimeType = MediaRecorder.isTypeSupported('video/mp4')
-      ? 'video/mp4'
-      : MediaRecorder.isTypeSupported('video/webm;codecs=vp9') 
-        ? 'video/webm;codecs=vp9' 
-        : 'video/webm';
+    const fps = telemetryData.video_metadata?.fps || 30;
 
-    // 2. Capture the visual frames from your canvas
-    const canvasStream = exportCanvas.captureStream(30); 
-    const tracks = [...canvasStream.getVideoTracks()];
-
-    // 3. Audio Extraction Block Removed to Ensure Cross-Platform Mobile Playback
-
-    // 4. Create a stream with just the Video track
-    const combinedStream = new MediaStream(tracks);
-
-    // 5. Cap the bitrate and record the visual stream
-    const mediaRecorder = new MediaRecorder(combinedStream, { 
-      mimeType,
-      videoBitsPerSecond: 5000000 
+    // 1. Initialize the MP4 Muxer
+    const muxer = new Mp4Muxer.Muxer({
+      target: new Mp4Muxer.ArrayBufferTarget(),
+      video: {
+        codec: 'avc',
+        width: exportCanvas.width,
+        height: exportCanvas.height,
+      },
+      // This is the magic setting! It writes the duration metadata to the FRONT 
+      // of the file, allowing media players to immediately enable timeline scrubbing.
+      fastStart: 'in-memory', 
     });
-    
-    const chunks: BlobPart[] = [];
 
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) chunks.push(e.data);
-    };
+    // 2. Initialize the WebCodecs Video Encoder
+    const videoEncoder = new VideoEncoder({
+      output: (chunk, meta) => muxer.addVideoChunk(chunk, meta!),
+      error: (e) => {
+        console.error("Encoding error:", e);
+        setIsExporting(false);
+      }
+    });
 
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: mimeType });
+    videoEncoder.configure({
+      codec: 'avc1.640028', // High Profile, Level 4.0 (Widely compatible H.264)
+      width: exportCanvas.width,
+      height: exportCanvas.height,
+      bitrate: 5_000_000, // 5 Mbps
+      framerate: fps,
+    });
+
+    let frameCount = 0;
+    video.pause();
+    video.currentTime = 0;
+
+    // 3. Frame-by-Frame Processing Loop
+    // We wrap this in a Promise so we can await the asynchronous 'seeked' events
+    const processVideoFrames = () => new Promise<void>((resolve) => {
+      const processNextFrame = async () => {
+        
+        // If we reached the end of the video, finish up
+        if (video.currentTime >= video.duration || frameCount > video.duration * fps + 10) {
+          video.removeEventListener('seeked', processNextFrame);
+          resolve();
+          return;
+        }
+
+        // Draw the video and skeletal overlay
+        ctx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
+        ctx.drawImage(video, 0, 0, exportCanvas.width, exportCanvas.height);
+        drawSkeletalOverlay(ctx, video, fps);
+
+        // Draw the UI Badges
+        const currentFrameIdx = Math.floor(video.currentTime * fps);
+        const frameData = telemetryData.frames[currentFrameIdx];
+        
+        if (frameData) {
+          ctx.direction = isArabic ? 'rtl' : 'ltr';
+          ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
+          ctx.textBaseline = "middle";
+          const badgeY = 40;
+          const badgeX = exportCanvas.width / 2;
+
+          if (!frameData.is_side_view) {
+            const text = t('awaiting_side'); 
+            ctx.textAlign = "left"; 
+            const textWidth = ctx.measureText(text).width;
+            const totalWidth = textWidth + 24; 
+            const startX = badgeX - totalWidth / 2;
+
+            ctx.fillStyle = "rgba(24, 24, 27, 0.85)";
+            ctx.beginPath();
+            ctx.roundRect(startX - 15, badgeY - 16, totalWidth + 30, 32, 16);
+            ctx.fill();
+
+            ctx.fillStyle = "#eab308";
+            ctx.beginPath();
+            ctx.arc(startX, badgeY, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#e4e4e7";
+            ctx.fillText(text, startX + 12, badgeY + 1);
+
+          } else {
+            const text = t('tracking_active'); 
+            ctx.textAlign = "left";
+            const textWidth = ctx.measureText(text).width;
+            const totalWidth = textWidth + 24;
+            const startX = badgeX - totalWidth / 2;
+
+            ctx.fillStyle = "rgba(9, 9, 11, 0.6)";
+            ctx.beginPath();
+            ctx.roundRect(startX - 15, badgeY - 16, totalWidth + 30, 32, 16);
+            ctx.fill();
+
+            ctx.fillStyle = "#22c55e";
+            ctx.beginPath();
+            ctx.arc(startX, badgeY, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#4ade80";
+            ctx.fillText(text, startX + 12, badgeY + 1);
+            
+            if (frameData.gait) {
+               const gaitText = frameData.gait;
+               ctx.textAlign = "center";
+               const gaitWidth = ctx.measureText(gaitText).width + 30;
+               const gaitY = badgeY + 36; 
+               
+               ctx.fillStyle = "rgba(24, 24, 27, 0.9)";
+               ctx.beginPath();
+               ctx.roundRect(badgeX - gaitWidth / 2, gaitY - 14, gaitWidth, 28, 14);
+               ctx.fill();
+               ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
+               ctx.stroke();
+
+               ctx.fillStyle = "#f59e0b";
+               ctx.fillText(gaitText, badgeX, gaitY + 1);
+            }
+          }
+        }
+
+        // 4. Convert canvas to VideoFrame and encode
+        // Using createImageBitmap is highly optimized for transferring pixels to the encoder
+        const bitmap = await createImageBitmap(exportCanvas);
+        
+        // WebCodecs requires precise microseconds for timestamps
+        const timestamp = (frameCount * 1_000_000) / fps; 
+        const frame = new VideoFrame(bitmap, { timestamp });
+        
+        // Force a keyframe every 2 seconds for clean timeline scrubbing
+        const keyFrame = frameCount % (fps * 2) === 0;
+        
+        videoEncoder.encode(frame, { keyFrame });
+        
+        frame.close();
+        bitmap.close();
+
+        frameCount++;
+        
+        // Update UI Progress
+        const currentProgress = Math.floor((video.currentTime / video.duration) * 100);
+        setExportProgress(currentProgress);
+
+        // Step forward exactly one frame
+        video.currentTime += 1 / fps;
+      };
+
+      // Wait for the video to successfully seek before firing the next frame capture
+      video.addEventListener('seeked', processNextFrame);
+      
+      // Kick off the loop
+      processNextFrame();
+    });
+
+    try {
+      // Wait for all frames to process
+      await processVideoFrames();
+
+      // 5. Flush the encoder and compile the final MP4
+      await videoEncoder.flush();
+      muxer.finalize();
+      
+      const buffer = muxer.target.buffer;
+      const blob = new Blob([buffer], { type: 'video/mp4' });
       const url = URL.createObjectURL(blob);
+      
       const a = document.createElement('a');
       a.href = url;
-      const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
-      a.download = `SARA_Analysis_${videoFile?.name || 'video'}.${extension}`;
+      a.download = `SARA_Analysis_${videoFile?.name || 'video'}.mp4`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 2000);
-      
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
       setIsExporting(false);
       video.muted = false;
       video.controls = true;
-      video.removeEventListener('ended', handleVideoEnd);
-    };
-
-    const fps = telemetryData.video_metadata?.fps || 30;
-    let lastProgress = -1; 
-    let isRecording = true;
-
-    const recordFrame = () => {
-      if (!isRecording) return;
-      
-      const currentFrameIdx = Math.floor(video.currentTime * fps);
-      const frameData = telemetryData.frames[currentFrameIdx];
-
-      ctx.drawImage(video, 0, 0, exportCanvas.width, exportCanvas.height);
-      drawSkeletalOverlay(ctx, video, fps);
-      
-      if (frameData) {
-        ctx.direction = isArabic ? 'rtl' : 'ltr';
-        
-        ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
-        ctx.textBaseline = "middle";
-        const badgeY = 40;
-        const badgeX = exportCanvas.width / 2;
-
-        if (!frameData.is_side_view) {
-          const text = t('awaiting_side'); 
-          ctx.textAlign = "left"; 
-          const textWidth = ctx.measureText(text).width;
-          const totalWidth = textWidth + 24; 
-          const startX = badgeX - totalWidth / 2;
-
-          ctx.fillStyle = "rgba(24, 24, 27, 0.85)";
-          ctx.beginPath();
-          ctx.roundRect(startX - 15, badgeY - 16, totalWidth + 30, 32, 16);
-          ctx.fill();
-
-          ctx.fillStyle = "#eab308";
-          ctx.beginPath();
-          ctx.arc(startX, badgeY, 4, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = "#e4e4e7";
-          ctx.fillText(text, startX + 12, badgeY + 1);
-
-        } else {
-          const text = t('tracking_active'); 
-          ctx.textAlign = "left";
-          const textWidth = ctx.measureText(text).width;
-          const totalWidth = textWidth + 24;
-          const startX = badgeX - totalWidth / 2;
-
-          ctx.fillStyle = "rgba(9, 9, 11, 0.6)";
-          ctx.beginPath();
-          ctx.roundRect(startX - 15, badgeY - 16, totalWidth + 30, 32, 16);
-          ctx.fill();
-
-          ctx.fillStyle = "#22c55e";
-          ctx.beginPath();
-          ctx.arc(startX, badgeY, 4, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = "#4ade80";
-          ctx.fillText(text, startX + 12, badgeY + 1);
-          
-          if (frameData.gait) {
-             const gaitText = frameData.gait;
-             ctx.textAlign = "center";
-             const gaitWidth = ctx.measureText(gaitText).width + 30;
-             const gaitY = badgeY + 36; 
-             
-             ctx.fillStyle = "rgba(24, 24, 27, 0.9)";
-             ctx.beginPath();
-             ctx.roundRect(badgeX - gaitWidth / 2, gaitY - 14, gaitWidth, 28, 14);
-             ctx.fill();
-             ctx.strokeStyle = "rgba(245, 158, 11, 0.4)";
-             ctx.stroke();
-
-             ctx.fillStyle = "#f59e0b";
-             ctx.fillText(gaitText, badgeX, gaitY + 1);
-          }
-        }
-      }
-
-      const currentProgress = Math.floor((video.currentTime / video.duration) * 100);
-      
-      if (currentProgress !== lastProgress && currentProgress <= 100) {
-        setExportProgress(currentProgress);
-        lastProgress = currentProgress;
-      }
-
-      if (!video.ended && !video.paused) {
-        requestAnimationFrame(recordFrame);
-      }
-    };
-
-    const handleVideoEnd = () => {
-      isRecording = false;
-      mediaRecorder.stop();
-    };
-
-    video.addEventListener('ended', handleVideoEnd);
-
-    video.currentTime = 0;
-    video.muted = true;
-    video.controls = false; 
-
-    setTimeout(() => {
-      mediaRecorder.start(500); 
-      
-      video.play().then(() => {
-        recordFrame(); 
-      }).catch(err => {
-        console.error("Playback prevented by browser:", err);
-        setIsExporting(false);
-      });
-    }, 100);
+    }
   };
   
   return (
