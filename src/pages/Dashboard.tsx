@@ -285,26 +285,12 @@ export default function Dashboard() {
     const canvasStream = exportCanvas.captureStream(30); 
     const tracks = [...canvasStream.getVideoTracks()];
 
-    // 3. Extract the audio track from the original video
-    try {
-      const anyVideo = video as any; // Bypass TS strict typing for browser-specific methods
-      const captureMethod = anyVideo.captureStream || anyVideo.mozCaptureStream;
-      
-      if (captureMethod) {
-        const videoStream = captureMethod.call(video);
-        const audioTracks = videoStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-          tracks.push(audioTracks[0]); // Stitch the audio track to our canvas visuals
-        }
-      }
-    } catch (err) {
-      console.warn("Could not extract audio track:", err);
-    }
+    // 3. Audio Extraction Block Removed to Ensure Cross-Platform Mobile Playback
 
-    // 4. Create a unified stream with both Video and Audio
+    // 4. Create a stream with just the Video track
     const combinedStream = new MediaStream(tracks);
 
-    // 5. Cap the bitrate and record the unified stream
+    // 5. Cap the bitrate and record the visual stream
     const mediaRecorder = new MediaRecorder(combinedStream, { 
       mimeType,
       videoBitsPerSecond: 5000000 
@@ -327,7 +313,6 @@ export default function Dashboard() {
       a.click();
       document.body.removeChild(a);
       
-      // FIX 2: Give the browser 2 seconds to actually start the download before wiping the memory
       setTimeout(() => {
         URL.revokeObjectURL(url);
       }, 2000);
@@ -442,8 +427,6 @@ export default function Dashboard() {
     video.controls = false; 
 
     setTimeout(() => {
-      // FIX 3: THE MAGIC BULLET. Pass 500ms into the start function.
-      // This forces the browser to flush the buffer to your 'chunks' array twice a second.
       mediaRecorder.start(500); 
       
       video.play().then(() => {
